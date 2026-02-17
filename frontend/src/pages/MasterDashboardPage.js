@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import API from "../api"; // IMPORTANT
 
 export default function MasterDashboardPage() {
 
@@ -8,28 +9,48 @@ export default function MasterDashboardPage() {
   const [briefing, setBriefing] = useState(null);
   const [portfolioBrain, setPortfolioBrain] = useState(null);
 
-  const loadData = () => {
-    axios.get("http://127.0.0.1:8000/scan")
-      .then(res => setScan(res.data));
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-    axios.get("http://127.0.0.1:8000/power-meter")
-      .then(res => setPower(res.data));
+  const loadData = async () => {
+    try {
+      setError("");
 
-    axios.get("http://127.0.0.1:8000/morning-briefing")
-      .then(res => setBriefing(res.data));
+      const [scanRes, powerRes, briefingRes, brainRes] =
+        await Promise.all([
+          axios.get(`${API}/scan`),
+          axios.get(`${API}/power-meter`),
+          axios.get(`${API}/morning-briefing`),
+          axios.get(`${API}/portfolio-brain`)
+        ]);
 
-    axios.get("http://127.0.0.1:8000/portfolio-brain")
-      .then(res => setPortfolioBrain(res.data));
+      setScan(scanRes.data);
+      setPower(powerRes.data);
+      setBriefing(briefingRes.data);
+      setPortfolioBrain(brainRes.data);
+
+      setLoading(false);
+
+    } catch (err) {
+      console.error(err);
+      setError("Backend not reachable. Check Render backend.");
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
     loadData();
-    const i = setInterval(loadData, 10000);
+
+    const i = setInterval(loadData, 10000); // refresh every 10 sec
     return () => clearInterval(i);
   }, []);
 
-  if (!scan || !power || !briefing || !portfolioBrain) {
+  if (loading) {
     return <div style={{ padding: 20 }}>Loading...</div>;
+  }
+
+  if (error) {
+    return <div style={{ padding: 20, color: "red" }}>{error}</div>;
   }
 
   const card = {
@@ -59,7 +80,7 @@ export default function MasterDashboardPage() {
           borderRadius: 8,
           marginBottom: 16
         }}>
-          ⚠️ {scan.reason}
+          ⚠️ {scan.reason || "No setups right now."}
         </div>
       )}
 
@@ -101,7 +122,7 @@ export default function MasterDashboardPage() {
 
             return (
               <div key={i} style={{
-                padding: "10px",
+                padding: 10,
                 marginBottom: 8,
                 borderRadius: 6,
                 background: bg
@@ -110,6 +131,7 @@ export default function MasterDashboardPage() {
                 Rating: {s.rating} | Momentum: {s.momentum}%<br />
                 🎯 Target: ₹{s.target} | 🛑 Stop: ₹{s.stop_loss}<br />
                 ⚖️ R/R: {s.rr_ratio}<br />
+
                 <b>
                   {s.signal === "ENTER NOW" && "🟢 ENTER NOW"}
                   {s.signal === "WAIT" && "🟡 WAIT"}
@@ -124,9 +146,9 @@ export default function MasterDashboardPage() {
       {/* HOW TO USE */}
       <div style={card}>
         <h3>📘 How to Use</h3>
-        1️⃣ Check Morning Briefing → GO signal.<br />
+        1️⃣ Check Morning Briefing — GO signal.<br />
         2️⃣ Focus on A+ or ENTER NOW stocks.<br />
-        3️⃣ Use target & stop-loss shown.<br />
+        3️⃣ Follow target & stop-loss exactly.<br />
         4️⃣ Start with paper trading first.
       </div>
 
@@ -142,11 +164,15 @@ export default function MasterDashboardPage() {
       {/* FAQ */}
       <div style={card}>
         <h3>❓ FAQ</h3>
-        <b>Why no stocks sometimes?</b><br />
-        Market closed or no high-quality setups.<br /><br />
 
-        <b>Is profit guaranteed?</b><br />
-        No. This is a research and decision-support tool.
+        <b>Why no stocks sometimes?</b><br />
+        Market closed or strict filters found no high-quality setups.<br /><br />
+
+        <b>Will it guarantee 1% daily?</b><br />
+        No — market conditions change daily.<br /><br />
+
+        <b>Can beginners use this?</b><br />
+        Yes, but start with paper trades first.
       </div>
 
       {/* DISCLAIMER */}

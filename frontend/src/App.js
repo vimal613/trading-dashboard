@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import Navbar from "./components/Navbar";
 
@@ -12,16 +12,36 @@ import ScannerLogsPage from "./pages/ScannerLogsPage";
 export default function App() {
   return (
     <BrowserRouter>
+
+      {/* Top Navigation */}
       <Navbar />
 
+      {/* Pages */}
       <Routes>
+
+        {/* Master Dashboard */}
         <Route path="/" element={<MasterDashboardPage />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
+
+        {/* Scanner */}
+        <Route path="/scanner" element={<DashboardPage />} />
+
+        {/* Paper Trades */}
         <Route path="/paper-trades" element={<PaperTradePage />} />
+
+        {/* Replay */}
         <Route path="/replay" element={<HistoricalReplayPage />} />
-        <Route path="/edge" element={<EdgeScorePage />} />
+
+        {/* Edge Score */}
+        <Route path="/edge-score" element={<EdgeScorePage />} />
+
+        {/* Live Logs */}
         <Route path="/logs" element={<ScannerLogsPage />} />
+
+        {/* Safety fallback (prevents blank pages) */}
+        <Route path="*" element={<Navigate to="/" />} />
+
       </Routes>
+
     </BrowserRouter>
   );
 }
